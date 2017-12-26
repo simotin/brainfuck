@@ -3,15 +3,17 @@
 
 #define CODE_LEN_MAX            (1024)
 #define DATA_LEN_MAX            (30000)
+#define STACK_LEN_MAX           (32)
 
-static unsigned char code[CODE_LEN_MAX] = {0};
-static unsigned char buf[DATA_LEN_MAX] = {0};
+static unsigned char code[CODE_LEN_MAX]        = {0};
+static unsigned char buf[DATA_LEN_MAX]         = {0};
+static unsigned char stackframe[STACK_LEN_MAX] = {0};
 
 int main(int argc, char **argv)
 {
     int c;
     int ip = 0;
-    int s_ptr;
+    int sp = 0;
     int ptr = 0;
     int clen = 0;
     FILE *fp;
@@ -56,10 +58,10 @@ int main(int argc, char **argv)
 
         code[clen++] = c;
     }
-		
-		#if 0
+
+    #if 0
     fprintf(stdout, "Program loaded, size:[%d] byte\n", clen);
-		#endif
+    #endif
 
     ip = 0;
     while(1)
@@ -91,7 +93,7 @@ int main(int argc, char **argv)
             ip++;
             break;
         case '[':
-            s_ptr = ip;
+            stackframe[sp++] = ip;
             if (buf[ptr] == 0)
             {
                 while(1)
@@ -99,6 +101,8 @@ int main(int argc, char **argv)
                     ip++;
                     if (code[ip] == ']')
                     {
+                    	sp--;
+                        ip++;
                         break;
                     }
                 }
@@ -111,10 +115,12 @@ int main(int argc, char **argv)
         case ']':
             if (buf[ptr] != 0)
             {
-                ip = s_ptr;
+                ip = stackframe[sp-1];
+                ip++;
             }
             else
             {
+            	sp--;
                 ip++;
             }
             break;
